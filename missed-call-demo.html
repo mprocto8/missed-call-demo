@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missed Call AI — Live Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --border: #1e1e2e;
+    --accent: #00e5a0;
+    --accent-dim: rgba(0,229,160,0.12);
+    --text: #eeeef4;
+    --muted: #6b6b80;
+    --bubble-in: #1c1c28;
+    --bubble-out: #00c98a;
+    --phone-bg: #111118;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 80px;
+    overflow-x: hidden;
+  }
+
+  /* noise grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; width: 100%; max-width: 480px; }
+
+  /* header */
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--accent-dim); border: 1px solid rgba(0,229,160,0.25);
+    color: var(--accent); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 100px;
+    margin-bottom: 28px;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.8s ease infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 14px;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 44px;
+    font-weight: 300;
+  }
+
+  /* phone mockup */
+  .phone {
+    background: var(--phone-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 40px;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    margin-bottom: 44px;
+  }
+
+  .phone-notch {
+    height: 28px;
+    background: #0a0a0f;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .phone-notch-pill {
+    width: 90px; height: 10px;
+    background: #000; border-radius: 10px;
+  }
+
+  .phone-header {
+    background: var(--surface);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #00e5a0, #0090ff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #000;
+    flex-shrink: 0;
+  }
+
+  .contact-info { flex: 1; }
+  .contact-name { font-size: 13px; font-weight: 600; font-family: 'Syne', sans-serif; }
+  .contact-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  .phone-body {
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 420px;
+    background: linear-gradient(180deg, #0e0e18 0%, #0a0a12 100%);
+  }
+
+  /* time stamp */
+  .timestamp {
+    text-align: center;
+    font-size: 10px; color: var(--muted);
+    margin: 4px 0;
+    letter-spacing: 0.05em;
+  }
+
+  /* missed call notice */
+  .missed-call {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: rgba(255,60,60,0.08); border: 1px solid rgba(255,60,60,0.18);
+    border-radius: 12px; padding: 10px 14px;
+    font-size: 11px; color: #ff6060;
+    margin: 0 8px;
+    animation: fadeSlideUp 0.5s ease forwards;
+    opacity: 0;
+    animation-delay: 0.3s;
+  }
+  .missed-call svg { flex-shrink: 0; }
+
+  /* bubbles */
+  .bubble-wrap {
+    display: flex; flex-direction: column;
+    opacity: 0;
+    animation: fadeSlideUp 0.45s ease forwards;
+  }
+  .bubble-wrap.them { align-items: flex-start; }
+  .bubble-wrap.me   { align-items: flex-end; }
+
+  .bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 13px; line-height: 1.5;
+    position: relative;
+  }
+  .bubble-wrap.them .bubble {
+    background: var(--bubble-in);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+  .bubble-wrap.me .bubble {
+    background: var(--bubble-out);
+    color: #001a0f;
+    font-weight: 500;
+    border-bottom-right-radius: 4px;
+  }
+
+  .bubble-time {
+    font-size: 9px; color: var(--muted);
+    margin-top: 4px; padding: 0 4px;
+  }
+
+  /* typing indicator */
+  .typing {
+    display: flex; align-items: center; gap: 5px;
+    padding: 10px 14px;
+    background: var(--bubble-in);
+    border-radius: 18px; border-bottom-left-radius: 4px;
+    width: fit-content;
+    opacity: 0;
+    animation: fadeSlideUp 0.4s ease forwards;
+  }
+  .typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+    animation: typingDot 1.2s ease infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingDot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* delay helpers */
+  .d1  { animation-delay: 0.8s; }
+  .d2  { animation-delay: 2.4s; }
+  .d3  { animation-delay: 3.2s; }
+  .d4  { animation-delay: 4.8s; }
+  .d5  { animation-delay: 5.6s; }
+  .d6  { animation-delay: 7.2s; }
+  .d7  { animation-delay: 8.0s; }
+  .d8  { animation-delay: 9.6s; }
+
+  /* bottom bar */
+  .phone-footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .input-mock {
+    flex: 1; background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 14px;
+    font-size: 12px; color: var(--muted);
+  }
+  .send-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* stats row */
+  .stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px; margin-bottom: 40px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 14px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px; font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); line-height: 1.3; }
+
+  /* cta */
+  .cta {
+    background: var(--accent);
+    color: #001a0f;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700; font-size: 14px;
+    letter-spacing: 0.02em;
+    border: none; border-radius: 14px;
+    padding: 16px 28px;
+    width: 100%; cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .fine-print {
+    text-align: center; margin-top: 14px;
+    font-size: 11px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="badge"><span class="dot"></span> Live Demo</div>
+
+  <h1>Never lose a lead to <span>voicemail</span> again.</h1>
+  <p class="subtitle">Watch exactly what happens the second a customer's call goes unanswered — this is what your customers will experience.</p>
+
+  <!-- Phone mockup -->
+  <div class="phone">
+    <div class="phone-notch"><div class="phone-notch-pill"></div></div>
+
+    <div class="phone-header">
+      <div class="avatar">P</div>
+      <div class="contact-info">
+        <div class="contact-name">Peak Plumbing Co.</div>
+        <div class="contact-sub">+1 (770) 555-0192</div>
+      </div>
+    </div>
+
+    <div class="phone-body">
+
+      <div class="timestamp">Today 2:14 PM</div>
+
+      <div class="missed-call">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.42 19.42 0 0 1 4.43 9.88a19.72 19.72 0 0 1-3.07-8.67A2 2 0 0 1 3.34 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.31 8.9"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+        Missed call — Peak Plumbing Co.
+      </div>
+
+      <!-- AI texts first -->
+      <div class="bubble-wrap them d1">
+        <div class="bubble">Hey! This is the AI assistant for Peak Plumbing Co. — sorry we missed your call! 👋 Are you looking for a quote, or is this an emergency repair?</div>
+        <div class="bubble-time">2:14 PM · Delivered instantly</div>
+      </div>
+
+      <!-- typing then customer replies -->
+      <div class="bubble-wrap me d2">
+        <div class="bubble">Hi yeah my kitchen sink has been leaking for a few days, getting pretty bad</div>
+        <div class="bubble-time">2:17 PM</div>
+      </div>
+
+      <div class="bubble-wrap them d3">
+        <div class="bubble">Got it — sounds like something we can fix fast. Are you in the Atlanta area? And is the leak under the sink or from the faucet itself?</div>
+        <div class="bubble-time">2:17 PM</div>
+      </div>
+
+      <div class="bubble-wrap me d4">
+        <div class="bubble">Yeah I'm in Marietta. It's under the sink, like the pipe connection</div>
+        <div class="bubble-time">2:19 PM</div>
+      </div>
+
+      <div class="bubble-wrap them d5">
+        <div class="bubble">Perfect, that's a quick fix for our guys. I've logged your info and Mike will call you back within the hour to confirm a time. Does tomorrow morning work for you?</div>
+        <div class="bubble-time">2:19 PM</div>
+      </div>
+
+      <div class="bubble-wrap me d6">
+        <div class="bubble">Yes tomorrow works great, thank you!</div>
+        <div class="bubble-time">2:21 PM</div>
+      </div>
+
+      <div class="bubble-wrap them d7">
+        <div class="bubble">You're all set! Mike will call you shortly. We appreciate you reaching out to Peak Plumbing 🔧</div>
+        <div class="bubble-time">2:21 PM</div>
+      </div>
+
+    </div>
+
+    <div class="phone-footer">
+      <div class="input-mock">iMessage</div>
+      <div class="send-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#001a0f" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">&lt;5s</div>
+      <div class="stat-label">Response after missed call</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">62%</div>
+      <div class="stat-label">Of calls to trades go unanswered</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">$0</div>
+      <div class="stat-label">Extra work for you</div>
+    </div>
+  </div>
+
+  <button class="cta">I Want This For My Business →</button>
+  <p class="fine-print">Setup takes less than 24 hours. No contracts. Cancel anytime.</p>
+
+</div>
+</body>
+</html>
