@@ -186,6 +186,39 @@
     opacity: 1;
     transform: translateY(0);
   }
+  .bubble-time {
+    display: block;
+    font-size: 10px;
+    color: #8696A0;
+    margin-top: 4px;
+  }
+  .sms-outgoing .bubble-time {
+    text-align: right;
+  }
+  .sms-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #F0F0F0;
+    border-top: 1px solid #D1D5DB;
+  }
+  .sms-input-field {
+    flex: 1;
+    background: white;
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 14px;
+    color: #9CA3AF;
+    border: 1px solid #E5E7EB;
+  }
+  .sms-send-btn {
+    width: 36px; height: 36px;
+    background: #34D399;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
 
   .mockup-caption {
     text-align: center;
@@ -488,19 +521,30 @@
         <div class="sms-body">
           <div class="sms-time">Customer calls at 2:14 PM — you're on a job</div>
           <div class="sms-bubble sms-incoming">
-            Hey! This is [Your Business]. Sorry we missed your call — what can we help you with today?
+            Hey! This is Peak Plumbing. Sorry we missed your call — what can we help you with today?
+            <span class="bubble-time">2:14 PM</span>
           </div>
           <div class="sms-bubble sms-outgoing">
             Hi, my kitchen faucet is leaking pretty bad. Are you available this week?
+            <span class="bubble-time">2:15 PM</span>
           </div>
           <div class="sms-bubble sms-incoming">
             Absolutely — we can take a look. What's your address and when works best for you?
+            <span class="bubble-time">2:15 PM</span>
           </div>
           <div class="sms-bubble sms-outgoing">
             123 Oak St. Tomorrow afternoon if possible!
+            <span class="bubble-time">2:16 PM</span>
           </div>
           <div class="sms-bubble sms-incoming">
-            Got it! I'll have someone reach out shortly to confirm the time. Thanks for reaching out 👍
+            You're all set! Mike will call you shortly. We appreciate you reaching out to Peak Plumbing 🔧
+            <span class="bubble-time">2:16 PM</span>
+          </div>
+        </div>
+        <div class="sms-input-bar">
+          <div class="sms-input-field">iMessage</div>
+          <div class="sms-send-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </div>
         </div>
       </div>
