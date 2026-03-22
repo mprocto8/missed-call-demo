@@ -156,7 +156,12 @@
     border-radius: 18px;
     font-size: 14px; line-height: 1.45;
     opacity: 0;
-    animation: fadeUp 0.4s ease forwards;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .sms-bubble.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
   .sms-incoming {
     background: white;
@@ -170,21 +175,16 @@
     align-self: flex-end;
     border-bottom-right-radius: 4px;
   }
-  .sms-bubble:nth-child(1) { animation-delay: 0.3s; }
-  .sms-bubble:nth-child(2) { animation-delay: 1.6s; }
-  .sms-bubble:nth-child(3) { animation-delay: 3.0s; }
-  .sms-bubble:nth-child(4) { animation-delay: 4.4s; }
-  .sms-bubble:nth-child(5) { animation-delay: 5.8s; }
   .sms-time {
     font-size: 11px; color: var(--slate);
     text-align: center; margin: 4px 0 8px;
-    opacity: 0; animation: fadeUp 0.4s ease forwards;
-    animation-delay: 0.1s;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
   }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+  .sms-time.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .mockup-caption {
@@ -651,6 +651,41 @@
   <p>© 2026 Aaron Proctor Consulting · <a href="legal.html">Privacy & Terms</a> · <a href="#sms-terms">SMS Terms</a></p>
   <p style="margin-top:8px;">By calling a business powered by Missed Call AI, you consent to receive SMS messages. Reply STOP to opt out. Msg & data rates may apply.</p>
 </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const smsBody = document.querySelector('.sms-body');
+  const timeEl = smsBody.querySelector('.sms-time');
+  const bubbles = smsBody.querySelectorAll('.sms-bubble');
+  let animated = false;
+
+  function animateBubbles() {
+    if (animated) return;
+    animated = true;
+
+    // Show timestamp first
+    setTimeout(function() { timeEl.classList.add('visible'); }, 200);
+
+    // Show each bubble with staggered delays
+    var delays = [800, 2200, 3600, 5000, 6400];
+    bubbles.forEach(function(bubble, i) {
+      setTimeout(function() { bubble.classList.add('visible'); }, delays[i]);
+    });
+  }
+
+  // Trigger when mockup section is visible
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        animateBubbles();
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+
+  observer.observe(document.querySelector('.mockup-section'));
+});
+</script>
 
 </body>
 </html>
